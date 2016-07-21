@@ -2,16 +2,20 @@ import requests
 import json
 
 # list of PRs
-PRs = [12883, 12905, 12916, 12974, 13004, 13139, 13205, 13232, 13255, 13290, 13252, 13331, 13307, 13334, 13389, 13491, 13557, 13567, 13683, 13704, 13832, 13822, 13861, 13868, 13915, 13997, 14101, 14139, 14313, 14314, 14363, 14383, 14456, 14418, 14461, 14482, 14526, 14594, 14572, 14691, 14749, 14838, 14920, 14599, 14856, 15061, 15092, 15180, 15214]
+PRs = [12883, 12905, 12916, 12974, 13004, 13139, 13205, 13232, 13255, 13290, 13252, 13331, 13307, 13334, 13389, 13491, 13557, 13567, 13683, 13704, 13832, 13822, 13861, 13868, 13915, 13997, 14101, 14139, 14313, 14314, 14363, 14383, 14456, 14418, 14461, 14482, 14526, 14594, 14572, 14691, 14749, 14838, 14920, 14599, 14856, 15061, 15092, 15180, 15214, 15241]
 
 # open cached database of PR properties
 with open("PRdict.json",'r') as PRfile:
     PRdict = json.load(PRfile)
 
+num_merged = 0
+    
 for PRnum in PRs:
     # skip finished PRs
     PR = str(PRnum)
-    if PR in PRdict.keys() and (PRdict[PR]["merged"] or PRdict[PR]["closed"]): continue
+    if PR in PRdict.keys() and (PRdict[PR]["merged"] or PRdict[PR]["closed"]):
+        num_merged += 1
+        continue
     # call API (https://developer.github.com/v3/pulls/)
     r = requests.get('https://api.github.com/repos/cms-sw/cmssw/pulls/'+str(PR))
     if(r.ok):
@@ -35,3 +39,6 @@ for PRnum in PRs:
 # save cached database
 with open("PRdict.json",'w') as PRfile:
     json.dump(PRdict,PRfile, indent=2)
+
+# print summary
+print str(len(PRs))+" PRs, "+str(num_merged)+" merged"   
