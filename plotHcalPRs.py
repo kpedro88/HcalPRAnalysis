@@ -4,6 +4,7 @@ import array
 import numpy
 import math
 import itertools
+from copy import deepcopy
 
 def get_stats(vals):
     test = numpy.array(vals)
@@ -29,8 +30,17 @@ row_dict = {}
 for i,d in enumerate(draw_split):
     v = tree.GetVal(i)
     v.SetSize(tree.GetSelectedRows())
-    row_dict[d] = v
-    
+    row_dict[d] = [vv for vv in v] # manual deep copy
+
+#find wait time for open PRs
+current_time = TDatime()
+current_time.Set(current_time.Convert(kTRUE));
+tree.SetAlias("wait","(("+str(current_time.Convert())+"-created_at.Convert())/60/60/24)")
+tree.Draw("wait","!merged&&!closed","para goff")
+v = tree.GetVal(0)
+v.SetSize(tree.GetSelectedRows())
+row_dict["wait"] = [vv for vv in v] # manual deep copy
+
 #find outliers
 outliers = {}
 outlier_numbers = []
@@ -81,6 +91,15 @@ for qty,vals in row_dict.iteritems():
     pave.SetTextSize(0.05)
     pave.Draw("same")
     
+    if qty=="wait":
+        pave2 = TPaveText(0.3,0.95,0.9,1.0,"NDC")
+        pave2.AddText(current_time.AsString()+" GMT")
+        pave2.SetFillColor(0)
+        pave2.SetBorderSize(0)
+        pave2.SetTextFont(42)
+        pave2.SetTextSize(0.05)
+        pave2.Draw("same")
+
     can.Print(qty+".png","png")
 
 #2D plots
