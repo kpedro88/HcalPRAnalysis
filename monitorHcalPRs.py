@@ -1,8 +1,13 @@
 import requests
 import json
 
+def getPRinfo(PRnum,PRprimary,PRdict):
+    PR = str(PRnum)
+    prim = str(PRprimary)
+    
+
 # list of PRs
-PRs = [12883, 12905, 12916, 12974, 13004, 13139, 13205, 13232, 13255, 13290, 13252, 13331, 13307, 13334, 13389, 13491, 13557, 13567, 13683, 13704, 13832, 13822, 13861, 13868, 13915, 13997, 14101, 14139, 14313, 14314, 14363, 14383, 14456, 14418, 14461, 14482, 14526, 14594, 14572, 14691, 14749, 14838, 14920, 14599, 14856, 15061, 15092, 15180, 15214, 15241, 15254, 15261, 15320, 15321, 15322, 15324, 15357, 15363, 15364]
+PRs = [12883, 12905, 12916, 12974, 13004, 13139, 13205, 13232, 13255, 13290, 13252, 13331, 13307, 13334, 13389, 13491, 13557, 13567, 13683, 13704, 13832, 13822, 13861, 13868, 13915, 13997, 14101, 14139, 14313, 14314, 14363, 14383, 14456, 14418, 14461, 14482, 14526, 14594, 14572, 14691, 14749, 14838, 14920, 14599, 14856, 15061, 15092, 15180, 15214, 15241, 15254, 15261, 15320, 15321, 15322, [15324,15419], 15357, 15363, 15364, 15374, 15380, 15382, 15403, 15406]
 
 # open cached database of PR properties
 with open("PRdict.json",'r') as PRfile:
@@ -10,31 +15,67 @@ with open("PRdict.json",'r') as PRfile:
 
 num_merged = 0
     
-for PRnum in PRs:
-    # skip finished PRs
-    PR = str(PRnum)
-    if PR in PRdict.keys() and (PRdict[PR]["merged"] or PRdict[PR]["closed"]):
-        num_merged += 1
-        continue
-    # call API (https://developer.github.com/v3/pulls/)
-    r = requests.get('https://api.github.com/repos/cms-sw/cmssw/pulls/'+str(PR))
-    if(r.ok):
-        PRitem = json.loads(r.text or r.content)
-        # create or reset dict entry
-        PRdict[PR] = {}
-        # get properties
-        PRdict[PR]["merged"] = PRitem["merged"]
-        PRdict[PR]["closed"] = PRitem["state"] != "open"
-        PRdict[PR]["created_at"] = PRitem["created_at"]
-        PRdict[PR]["merged_at"] = PRitem["merged_at"]
-        PRdict[PR]["closed_at"] = PRitem["closed_at"]
-        PRdict[PR]["comments"] = PRitem["comments"]
-        PRdict[PR]["commits"] = PRitem["commits"]
-        PRdict[PR]["additions"] = PRitem["additions"]
-        PRdict[PR]["deletions"] = PRitem["deletions"]
-        PRdict[PR]["changed_files"] = PRitem["changed_files"]
+for PRitem in PRs:
+    # handle PRs with multiple numbers
+    if isinstance(PRitem,list):
+        PRlist = PRitem
+        primary = PRlist[0]
+    else:
+        PRlist = [PRitem]
+        primary = PRitem
+    
+    skip = False
+        
+    for PRnum in PRlist:
+        if skip: break
+        PR = str(PRnum)
+        pri = str(primary)
 
-        if PRdict[PR]["closed"] and not PRdict[PR]["merged"]: print "PR "+str(PR)+" was closed without being merged"
+        if PRnum==primary:
+            # skip finished PRs
+            if pri in PRdict.keys() and (PRdict[pri]["merged"] or PRdict[pri]["closed"]):
+                if PRdict[pri]["merged"]: num_merged += 1
+                skip = True
+                continue
+        # call API (https://developer.github.com/v3/pulls/)
+        r = requests.get('https://api.github.com/repos/cms-sw/cmssw/pulls/'+str(PR))
+        if(r.ok):
+            PRitem = json.loads(r.text or r.content)
+            # create or reset dict entry
+            if PRnum==primary:
+                PRdict[PR] = {}
+            # get properties
+            
+            if PRnum==primary:
+                # some properties are taken from primary only
+                PRdict[pri]["created_at"] = PRitem["created_at"]
+                PRdict[pri]["comments"] = PRitem["comments"]\
+                
+                # some are taken from primary to start
+                PRdict[pri]["merged"] = PRitem["merged"]
+                PRdict[pri]["closed"] = PRitem["state"] != "open"
+                PRdict[pri]["merged_at"] = PRitem["merged_at"]
+                PRdict[pri]["closed_at"] = PRitem["closed_at"]
+                PRdict[pri]["commits"] = PRitem["commits"]
+                PRdict[pri]["additions"] = PRitem["additions"]
+                PRdict[pri]["deletions"] = PRitem["deletions"]
+                PRdict[pri]["changed_files"] = PRitem["changed_files"]
+            else:    
+                # some are overwritten from secondary
+                PRdict[pri]["merged"] = PRitem["merged"]
+                PRdict[pri]["closed"] = PRitem["state"] != "open"
+                PRdict[pri]["merged_at"] = PRitem["merged_at"]
+                PRdict[pri]["closed_at"] = PRitem["closed_at"]
+                PRdict[pri]["commits"] = PRitem["commits"]
+                PRdict[pri]["additions"] = PRitem["additions"]
+                PRdict[pri]["deletions"] = PRitem["deletions"]
+                PRdict[pri]["changed_files"] = PRitem["changed_files"]
+            
+                # some are combined
+                PRdict[pri]["comments"] += PRitem["comments"]
+
+            if PRdict[pri]["closed"] and not PRdict[pri]["merged"]: print "PR "+PR+" was closed without being merged"
+            if PRdict[pri]["merged"]: num_merged += 1
         
 # save cached database
 with open("PRdict.json",'w') as PRfile:
