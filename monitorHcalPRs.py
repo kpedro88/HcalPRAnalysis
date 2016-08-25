@@ -7,12 +7,14 @@ def getPRinfo(PRnum,PRprimary,PRdict):
     
 
 # list of PRs
-PRs = [12883, 12905, 12916, 12974, 13004, 13139, 13205, 13232, 13255, 13290, 13252, 13331, 13307, 13334, 13389, 13491, 13557, 13567, 13683, 13704, 13832, 13822, 13861, 13868, 13915, 13997, 14101, 14139, 14313, 14314, 14363, 14383, 14456, 14418, 14461, 14482, 14526, 14594, 14572, 14691, 14749, 14838, 14920, 14599, 14856, 15061, 15092, 15180, 15214, 15241, 15254, 15261, 15320, 15321, 15322, [15324,15419], 15357, 15363, 15364, 15374, 15380, 15382, 15403, 15406]
+PRs = [12883, 12905, 12916, 12974, 13004, 13139, 13205, 13232, 13255, 13290, 13252, 13331, 13307, 13334, 13389, 13491, 13557, 13567, 13683, 13704, 13832, 13822, 13861, 13868, 13915, 13997, 14101, 14139, 14313, 14314, 14363, 14383, 14456, 14418, 14461, 14482, 14526, 14594, 14572, 14691, 14749, 14838, 14920, 14599, 14856, 15061, 15092, 15180, 15214, 15241, 15254, 15261, 15320, [15321,15520], 15322, [15324,15419], 15357, 15363, 15364, 15374, 15380, 15382, 15403, 15406, 15474, 15499, 15521, 15467, 15606]
 
 # open cached database of PR properties
 with open("PRdict.json",'r') as PRfile:
-    PRdict = json.load(PRfile)
+    PRdictCached = json.load(PRfile)
 
+PRdict = {}
+    
 num_merged = 0
     
 for PRitem in PRs:
@@ -33,7 +35,8 @@ for PRitem in PRs:
 
         if PRnum==primary:
             # skip finished PRs
-            if pri in PRdict.keys() and (PRdict[pri]["merged"] or PRdict[pri]["closed"]):
+            if pri in PRdictCached.keys() and (PRdictCached[pri]["merged"] or PRdictCached[pri]["closed"]):
+                PRdict[pri] = PRdictCached[pri]
                 if PRdict[pri]["merged"]: num_merged += 1
                 skip = True
                 continue
@@ -44,8 +47,7 @@ for PRitem in PRs:
             # create or reset dict entry
             if PRnum==primary:
                 PRdict[PR] = {}
-            # get properties
-            
+            # get properties            
             if PRnum==primary:
                 # some properties are taken from primary only
                 PRdict[pri]["created_at"] = PRitem["created_at"]
