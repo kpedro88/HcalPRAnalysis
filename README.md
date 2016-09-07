@@ -15,3 +15,7 @@ To make 1D distributions, 2D correlations, and find outliers:
 python plotHcalPRs.py
 ```
 
+To get a summary of statistics for all PRs:
+```
+python sumHcalPRs.py
+```
