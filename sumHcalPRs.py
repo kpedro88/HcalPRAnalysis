@@ -3,7 +3,7 @@ from ROOT import *
 file = TFile.Open("PRtree.root")
 tree = file.Get("tree")
 
-cleanup = [15363,15320,15061,14856,15374]
+cleanup = [15363,15320,15061,14856,15374,16080]
 
 cleanup_cut = "||".join(["number=="+str(cu) for cu in cleanup])
 
